@@ -40,7 +40,7 @@ Here you can see the console application in action.
 - *Podcast Description*
 - *Podcast Social Media Posts*
 - *Podcast Audio*
-- *Podcast Cover*.
+- *Podcast Cover*
 
 The final output will be a ZIP archive containing all generated assets.
 
