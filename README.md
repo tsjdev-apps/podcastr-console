@@ -4,6 +4,10 @@
 
 This repository contains a console application written in .NET 9 to create a podcast using AI.
 
+## Slides
+
+[Here](/slides/2024-12-03_AzureCommunityDay_Podcast.pdf) are the slides from my presentation, 'Creating Your Own Podcast with the Help of AI,' delivered at the Azure Developer Community Day 2024 in Munich.
+
 ## Usage
 
 To use this application, you need an Azure OpenAI instance running in Azure. Additionally, you'll need to deploy the following models:
