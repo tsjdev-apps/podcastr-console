@@ -46,9 +46,9 @@ Here you can see the console application in action.
 - *Podcast Audio*
 - *Podcast Cover*
 
-The final output will be a ZIP archive containing all generated assets.
+The final output will be a ZIP archive containing all generated assets. You will also get a approximate price for the generation.
 
-![podcastr-console-01](/docs/podcastr-console-05.png)
+![podcastr-console-01](/docs/podcastr-console-06.png)
 
 ## Sample Output
 

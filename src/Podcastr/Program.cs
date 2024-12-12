@@ -65,6 +65,9 @@ while (shouldRepeat)
 {
     ConsoleHelper.ShowHeader();
 
+    // Reset TokenUsage
+    TokenUsageHelper.Reset();
+
     // Get an URL from the user containing the content
     var contentUrl =
         ConsoleHelper.GetStringFromConsole(
@@ -168,6 +171,8 @@ while (shouldRepeat)
     // Save the zip archive to disk
     var zipFilePath = await FileHelper.WriteToTempFolderAsync(zipArchive);
     ConsoleHelper.WriteMessage($"Zip archive saved to [link][yellow]{zipFilePath}[/][/]");
+
+    ConsoleHelper.RenderTokenUsageTable(podcastImage is not null);
 
     shouldRepeat = ConsoleHelper.GetConfirmation("Do you want to repeat the process?", false);
 }
