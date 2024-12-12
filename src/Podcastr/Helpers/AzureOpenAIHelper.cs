@@ -53,6 +53,11 @@ internal static class AzureOpenAIHelper
                     [systemChatMessage],
                     options);
 
+            // Get Input Tokens and Output Tokens
+            ChatTokenUsage usage = chatResult.Value.Usage;
+            TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
+            TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
+
             // Extract and return the content from the response
             return chatResult.Value.Content[0].Text;
         }
@@ -99,6 +104,11 @@ internal static class AzureOpenAIHelper
                 await chatClient.CompleteChatAsync(
                     [systemChatMessage],
                     options);
+
+            // Get Input Tokens and Output Tokens
+            ChatTokenUsage usage = chatResult.Value.Usage;
+            TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
+            TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
 
             // Extract and return the description from the response
             return chatResult.Value.Content[0].Text;
@@ -148,6 +158,11 @@ internal static class AzureOpenAIHelper
                     [systemChatMessage],
                     options);
 
+            // Get Input Tokens and Output Tokens
+            ChatTokenUsage usage = chatResult.Value.Usage;
+            TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
+            TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
+
             // Extract and return the description from the response
             return chatResult.Value.Content[0].Text;
         }
@@ -180,6 +195,9 @@ internal static class AzureOpenAIHelper
                 await audioClient.GenerateSpeechAsync(
                     podcastScript,
                     new GeneratedSpeechVoice(voice.ToLower()));
+
+            // Add Audio Characters
+            TokenUsageHelper.AddAudioInputCharacters(podcastScript?.Length ?? 0);
 
             // Return the audio as a byte array
             return audioResult.Value.ToArray();
@@ -225,6 +243,11 @@ internal static class AzureOpenAIHelper
                 await chatClient.CompleteChatAsync(
                     [systemChatMessage],
                     chatOptions);
+
+            // Get Input Tokens and Output Tokens
+            ChatTokenUsage usage = chatResult.Value.Usage;
+            TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
+            TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
 
             // Extract the generated image prompt
             string imagePrompt = chatResult.Value.Content[0].Text;
