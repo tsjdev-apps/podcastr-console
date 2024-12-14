@@ -16,7 +16,7 @@ To use this application, you need an Azure OpenAI instance running in Azure. Add
 - **TTS model**, e.g., `tts` or `tts-hd`
 - **Image model**, e.g., `dall-e-3`
 
-You can either add your credentials to the file Secrets.cs in the Utils folder or start the console application directly. In the latter case, you will be prompted to enter the required information.
+You can either add your credentials to the file `Secrets.cs` in the `Utils` folder or start the console application directly. In the latter case, you will be prompted to enter the required information.
 
 ## Screenshots
 
@@ -48,7 +48,7 @@ Here you can see the console application in action.
 
 The final output will be a ZIP archive containing all generated assets. You will also get a approximate price for the generation.
 
-![podcastr-console-01](/docs/podcastr-console-06.png)
+![podcastr-console-01](/docs/podcastr-console-07.png)
 
 ## Sample Output
 
