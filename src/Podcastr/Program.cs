@@ -101,54 +101,39 @@ while (shouldRepeat)
         continue;
 
     // Get the podcast script
-    var podcastScript = await ExecuteWithHandlingAsync("Generating podcast script...",
+    PodcastContent? podcastContent = await ExecuteWithHandlingAsync(
+        "Generating podcast script, description and Social Media Posts...",
         async () => await AzureOpenAIHelper.GetPodcastContentAsync(
             chatClient,
             content,
             podcastName,
             podcastLanguage));
 
-    if (!ValidateStep(podcastScript, "Podcast script generation", ref shouldRepeat))
+    if (!ValidateStep(podcastContent, "Podcast content generation", ref shouldRepeat))
         continue;
 
     // Start parallel tasks for remaining operations
-    var descriptionTask = ExecuteWithHandlingAsync("Generating podcast description...",
-        async () => await AzureOpenAIHelper.GetPodcastDescriptionAsync(
-            chatClient,
-            podcastScript,
-            podcastLanguage));
-
-    var socialMediaPostsTask = ExecuteWithHandlingAsync("Generating social media posts...",
-        async () => await AzureOpenAIHelper.GetPodcastSocialMediaPostsAsync(
-            chatClient,
-            podcastScript,
-            podcastLanguage));
-
     var audioTask = ExecuteWithHandlingAsync("Generating podcast audio...",
         async () => await AzureOpenAIHelper.GetPodcastAudioAsync(
             audioClient,
-            podcastScript,
+            podcastContent?.Script,
             podcastVoice));
 
     var imageTask = ExecuteWithHandlingAsync("Generating podcast image...",
         async () => await AzureOpenAIHelper.GetPodcastCoverAsync(
             chatClient,
             imageClient,
-            podcastScript));
+            podcastContent?.Script));
 
     // Wait for all tasks to complete
-    await Task.WhenAll(descriptionTask, socialMediaPostsTask, audioTask, imageTask);
+    await Task.WhenAll(audioTask, imageTask);
 
     // Get results from completed tasks
-    var podcastDescription = descriptionTask.Result;
-    var podcastSocialMediaPosts = socialMediaPostsTask.Result;
     var podcastAudio = audioTask.Result;
     var podcastImage = imageTask.Result;
 
     // Validate results
-    if (!ValidateStep(podcastDescription, "Podcast description generation", ref shouldRepeat) ||
-        !ValidateStep(podcastSocialMediaPosts, "Podcast social media posts generation", ref shouldRepeat) ||
-        !ValidateStep(podcastAudio, "Podcast audio generation", ref shouldRepeat) ||
+    if (!ValidateStep(podcastAudio, "Podcast audio generation", ref shouldRepeat) ||
         !ValidateStep(podcastImage, "Podcast image generation", ref shouldRepeat))
     {
         continue;
@@ -158,11 +143,34 @@ while (shouldRepeat)
     var zipArchive = await ExecuteWithHandlingAsync("Creating zip archive...",
         () => Task.FromResult(ZipArchiveHelper.CreateZipArchive(
             [
-                new ZipElement(podcastScript, null, "podcast-script.txt"),
-                new ZipElement(podcastDescription, null, "podcast-description.txt"),
-                new ZipElement(podcastSocialMediaPosts, null, "podcast-socialmediaposts.txt"),
-                new ZipElement(null, podcastAudio, "podcast-audio.mp3"),
-                new ZipElement(null, podcastImage, "podcast-image.png")
+                new ZipElement(
+                    podcastContent?.Script,
+                    null,
+                    "podcast-script.txt"),
+                new ZipElement(
+                    podcastContent?.Description,
+                    null,
+                    "podcast-description.txt"),
+                new ZipElement(
+                    podcastContent?.SocialMediaPosts?.LinkedIn,
+                    null,
+                    "podcast-socialmediaposts-linkedin.txt"),
+                new ZipElement(
+                    podcastContent?.SocialMediaPosts?.Facebook,
+                    null,
+                    "podcast-socialmediaposts-facebook.txt"),
+                new ZipElement(
+                    podcastContent?.SocialMediaPosts?.Twitter,
+                    null,
+                    "podcast-socialmediaposts-twitter.txt"),
+                new ZipElement(
+                    null,
+                    podcastAudio,
+                    "podcast-audio.mp3"),
+                new ZipElement(
+                    null,
+                    podcastImage,
+                    "podcast-image.png")
             ])));
 
     if (!ValidateStep(zipArchive, "Creating zip archive", ref shouldRepeat))
@@ -172,7 +180,8 @@ while (shouldRepeat)
     var zipFilePath = await FileHelper.WriteToTempFolderAsync(zipArchive);
     ConsoleHelper.WriteMessage($"Zip archive saved to [link][yellow]{zipFilePath}[/][/]");
 
-    ConsoleHelper.RenderTokenUsageTable(podcastImage is not null);
+    // Show the tables with the costs
+    TableHelper.ShowTable(podcastImage is not null);
 
     shouldRepeat = ConsoleHelper.GetConfirmation("Do you want to repeat the process?", false);
 }

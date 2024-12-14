@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using Podcastr.Utils;
+using Spectre.Console;
 
 namespace Podcastr.Helpers;
 
@@ -175,46 +176,5 @@ internal static class ConsoleHelper
         string message)
     {
         AnsiConsole.MarkupLine($"[white]{message}[/]");
-    }
-
-    public static void RenderTokenUsageTable(bool isImageGenerated)
-    {
-        AnsiConsole.WriteLine();
-
-        // Create a table
-        var table = new Table();
-
-        // Add some columns
-        table.AddColumn("");
-        table.AddColumn(new TableColumn("Count").Centered());
-        table.AddColumn(new TableColumn("approx. Price").LeftAligned());
-
-        var inputPrice = Math.Round(TokenUsageHelper.GetChatInputTokenCount() / 1000 * 0.00250, 2);
-        var outputPrice = Math.Round(TokenUsageHelper.GetChatOutputTokenCount() / 1000 * 0.01000, 2);
-        var audioPrice = Math.Round(TokenUsageHelper.GetAudioInputCharacters() / 1000 * 0.015, 2);
-        var imagePrice = Math.Round(isImageGenerated ? 0.040 : 0, 2);
-
-        // Add some rows
-        table.AddRow(
-            "Chat Input", 
-            $"[yellow]{TokenUsageHelper.GetChatInputTokenCount()}[/]", 
-            $"${inputPrice} with GPT-4o-Mini");
-        table.AddRow(
-            "Chat Output", 
-            $"[yellow]{TokenUsageHelper.GetChatOutputTokenCount()}[/]", 
-            $"${outputPrice} with GPT-4o-Mini");
-        table.AddRow(
-            "Audio", 
-            $"[yellow]{TokenUsageHelper.GetAudioInputCharacters()}[/]", 
-            $"${audioPrice} with TTS");
-        table.AddRow(
-            "Image", 
-            $"[yellow]{(isImageGenerated ? 1 : 0)}[/]",
-            $"${imagePrice} with DALL-E-3 Standard");
-
-        // Render the table to the console
-        AnsiConsole.Write(table);
-
-        AnsiConsole.WriteLine();
     }
 }
