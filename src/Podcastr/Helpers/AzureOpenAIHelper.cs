@@ -2,8 +2,10 @@
 using OpenAI.Chat;
 using OpenAI.Images;
 using Podcastr.Exceptions;
+using Podcastr.Models;
 using Podcastr.Utils;
 using System.ClientModel;
+using System.Text.Json;
 
 namespace Podcastr.Helpers;
 
@@ -14,15 +16,23 @@ namespace Podcastr.Helpers;
 internal static class AzureOpenAIHelper
 {
     /// <summary>
-    ///     Retrieves the podcast content asynchronously using 
-    ///     the Azure OpenAI API.
+    ///     JSON serializer options with case-insensitive property name matching.
+    /// </summary>
+    private static readonly JsonSerializerOptions _jsonSerializerOptions =
+        new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>
+    ///     Retrieves podcast content asynchronously using the provided chat client.
     /// </summary>
     /// <param name="chatClient">The Azure OpenAI chat client.</param>
-    /// <param name="htmlContent">The content from the website.</param>
+    /// <param name="htmlContent">The HTML content to be processed.</param>
     /// <param name="podcastName">The name of the podcast.</param>
     /// <param name="podcastLanguage">The language of the podcast.</param>
-    /// <returns>The podcast content as a string.</returns>
-    public static async Task<string> GetPodcastContentAsync(
+    /// <returns>A task that represents the asynchronous operation. 
+    /// The task result contains the podcast content.</returns>
+    /// <exception cref="AzureOpenAIException">Thrown when there is an 
+    /// error retrieving the podcast content.</exception>
+    public static async Task<PodcastContent?> GetPodcastContentAsync(
         ChatClient chatClient,
         string? htmlContent,
         string podcastName,
@@ -33,7 +43,47 @@ internal static class AzureOpenAIHelper
             // Configure chat completion options
             ChatCompletionOptions options = new()
             {
-                MaxOutputTokenCount = 4096,
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                    "podcast_content",
+                    jsonSchema: BinaryData.FromString(
+                        /* language=JSON */
+                        """
+                        {
+                          "type": "object",
+                          "properties": {
+                            "script": {
+                              "type": "string",
+                              "description": "The script of the podcast"
+                            },
+                            "description": {
+                              "type": "string",
+                              "description": "A brief description of the podcast"
+                            },
+                            "socialMediaPosts": {
+                              "type": "object",
+                              "properties": {
+                                "linkedIn": {
+                                  "type": "string",
+                                  "description": "The LinkedIn post for the podcast"
+                                },
+                                "twitter": {
+                                  "type": "string",
+                                  "description": "The Twitter post for the podcast"
+                                },
+                                "Facebook": {
+                                  "type": "string",
+                                  "description": "The Facebook post for the podcast"
+                                }
+                              },
+                              "required": ["linkedIn", "twitter", "facebook"],
+                              "addionalProperties": false,
+                              "description": "Social media posts for various platforms"
+                            }
+                          },
+                          "required": ["script", "description", "socialMediaPosts"],
+                          "additionalProperties": false
+                        }
+                        """)),
                 Temperature = 0.7f,
             };
 
@@ -59,7 +109,12 @@ internal static class AzureOpenAIHelper
             TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
 
             // Extract and return the content from the response
-            return chatResult.Value.Content[0].Text;
+            using JsonDocument structuredJson =
+                JsonDocument.Parse(chatResult.Value.Content[0].Text);
+
+            return JsonSerializer.Deserialize<PodcastContent>(
+                structuredJson.RootElement.ToString(),
+                _jsonSerializerOptions);
         }
         catch (Exception ex)
         {
@@ -69,112 +124,6 @@ internal static class AzureOpenAIHelper
                 ex);
         }
     }
-
-    /// <summary>
-    ///     Generates a podcast description based on the provided script.
-    /// </summary>
-    /// <param name="chatClient">The Azure OpenAI chat client.</param>
-    /// <param name="podcastScript">The script of the podcast.</param>
-    /// <returns>A description of the podcast.</returns>
-    public static async Task<string> GetPodcastDescriptionAsync(
-        ChatClient chatClient,
-        string? podcastScript,
-        string podcastLanguage)
-    {
-        try
-        {
-            // Configure chat completion options
-            ChatCompletionOptions options = new()
-            {
-                MaxOutputTokenCount = 1000,
-                Temperature = 0.7f,
-            };
-
-            // Prepare the system message with context
-            SystemChatMessage systemChatMessage =
-                ChatMessage.CreateSystemMessage(
-                    ChatMessageContentPart.CreateTextPart(
-                        string.Format(
-                            Statics.PodcastDescriptionPrompt,
-                            podcastLanguage,
-                            podcastScript)));
-
-            // Request description from the OpenAI service
-            ClientResult<ChatCompletion> chatResult =
-                await chatClient.CompleteChatAsync(
-                    [systemChatMessage],
-                    options);
-
-            // Get Input Tokens and Output Tokens
-            ChatTokenUsage usage = chatResult.Value.Usage;
-            TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
-            TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
-
-            // Extract and return the description from the response
-            return chatResult.Value.Content[0].Text;
-        }
-        catch (Exception ex)
-        {
-            // Wrap and rethrow exceptions for better error tracing
-            throw new AzureOpenAIException(
-                $"Error retrieving podcast description: {ex.Message}",
-                ex);
-        }
-    }
-
-
-    /// <summary>
-    ///    Generates social media posts based on the provided script.
-    /// </summary>
-    /// <param name="chatClient">The Azure OpenAI chat client.</param>
-    /// <param name="podcastScript">The script of the podcast.</param>
-    /// <returns>A description of the podcast.</returns>
-    public static async Task<string> GetPodcastSocialMediaPostsAsync(
-        ChatClient chatClient,
-        string? podcastScript,
-        string podcastLanguage)
-    {
-        try
-        {
-            // Configure chat completion options
-            ChatCompletionOptions options = new()
-            {
-                MaxOutputTokenCount = 1000,
-                Temperature = 0.7f,
-            };
-
-            // Prepare the system message with context
-            SystemChatMessage systemChatMessage =
-                ChatMessage.CreateSystemMessage(
-                    ChatMessageContentPart.CreateTextPart(
-                        string.Format(
-                            Statics.PodcastSocialMediaPostsPrompt,
-                            podcastLanguage,
-                            podcastScript)));
-
-            // Request description from the OpenAI service
-            ClientResult<ChatCompletion> chatResult =
-                await chatClient.CompleteChatAsync(
-                    [systemChatMessage],
-                    options);
-
-            // Get Input Tokens and Output Tokens
-            ChatTokenUsage usage = chatResult.Value.Usage;
-            TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
-            TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
-
-            // Extract and return the description from the response
-            return chatResult.Value.Content[0].Text;
-        }
-        catch (Exception ex)
-        {
-            // Wrap and rethrow exceptions for better error tracing
-            throw new AzureOpenAIException(
-                $"Error retrieving podcast social media posts: {ex.Message}",
-                ex);
-        }
-    }
-
 
     /// <summary>
     ///     Generates podcast audio based on the provided script and voice settings.
