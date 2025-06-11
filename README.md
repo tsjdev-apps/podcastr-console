@@ -26,19 +26,19 @@ Here you can see the console application in action.
 
 ![podcastr-console-01](/docs/podcastr-console-01.png)
 
-2. Enter the `Name` of your podcast.
+1. Enter the `Name` of your podcast.
 
 ![podcastr-console-01](/docs/podcastr-console-02.png)
 
-3. Specify the `Language` of your podcast. Currently supported languages are German, English, Spanish, and French. However, the AI models support additional languages.
+1. Specify the `Language` of your podcast. Currently supported languages are German, English, Spanish, and French. However, the AI models support additional languages.
 
 ![podcastr-console-01](/docs/podcastr-console-03.png)
 
-4. Select a `Voice`. Azure OpenAI currently supports six different voices.
+1. Select a `Voice`. Azure OpenAI currently supports six different voices.
 
 ![podcastr-console-01](/docs/podcastr-console-04.png)
 
-5. After configuring your settings, the application will generate the following:
+1. After configuring your settings, the application will generate the following:
 
 - *Podcast Script*
 - *Podcast Description*
@@ -48,7 +48,7 @@ Here you can see the console application in action.
 
 The final output will be a ZIP archive containing all generated assets. You will also get a approximate price for the generation.
 
-![podcastr-console-01](/docs/podcastr-console-07.png)
+![podcastr-console-01](/docs/podcastr-console-05.png)
 
 ## Sample Output
 
