@@ -168,7 +168,7 @@ internal static class AzureOpenAIHelper
 
             string imagePrompt = chatResult.Value.Content[0].Text;
 
-            ImageGenerationOptions imageOptions = new ImageGenerationOptions
+            ImageGenerationOptions imageOptions = new()
             {
                 Quality = GeneratedImageQuality.Standard,
                 ResponseFormat = GeneratedImageFormat.Bytes,

@@ -36,17 +36,14 @@ internal static class Statics
     // Token Prices (per 1000 tokens)
     // -----------------------------
 
-    public static readonly decimal Gpt4oMiniInputPrice = 0.000150m;
-    public static readonly decimal Gpt4oMiniOutputPrice = 0.000600m;
+    public static readonly decimal Gpt41InputPrice = 0.002m;
+    public static readonly decimal Gpt41OutputPrice = 0.008m;
 
-    public static readonly decimal Gpt4oInputPrice = 0.00250m;
-    public static readonly decimal Gpt4oOutputPrice = 0.01000m;
+    public static readonly decimal Gpt41MiniInputPrice = 0.0004m;
+    public static readonly decimal Gpt41MiniOutputPrice = 0.0016m;
 
-    public static readonly decimal Gpt4TurboInputPrice = 0.01000m;
-    public static readonly decimal Gpt4TurboOutputPrice = 0.03000m;
-
-    public static readonly decimal Gpt4InputPrice = 0.03000m;
-    public static readonly decimal Gpt4OutputPrice = 0.06000m;
+    public static readonly decimal Gpt41NanoInputPrice = 0.0001m;
+    public static readonly decimal Gpt41NanoOutputPrice = 0.0004m;
 
     // -----------------------------
     // Audio Prices (per 1000 characters)
@@ -54,6 +51,8 @@ internal static class Statics
 
     public static readonly decimal TTSPrice = 0.015m;
     public static readonly decimal TTSHDPrice = 0.030m;
+    public static readonly decimal GPT4oMiniTTSPrice = 0.01m;
+    public static readonly decimal GPT4oTTSPrice = 0.04m;
 
     // -----------------------------
     // Image Prices (per image)

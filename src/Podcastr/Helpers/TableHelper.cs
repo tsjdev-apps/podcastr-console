@@ -27,16 +27,27 @@ internal static class TableHelper
         [
             new TableColumn("Category").Centered(),
             new TableColumn("Count").Centered(),
-            new TableColumn("GPT-4o Mini").LeftAligned(),
-            new TableColumn("GPT-4o").LeftAligned(),
-            new TableColumn("GPT-4 Turbo").LeftAligned(),
-            new TableColumn("GPT-4").LeftAligned()
+            new TableColumn("GPT-4.1").LeftAligned(),
+            new TableColumn("GPT-4.1 mini").LeftAligned(),
+            new TableColumn("GPT-4.1 nano").LeftAligned()
         ];
 
         List<Row> chatRows =
         [
-            CreateChatRow("Chat Input", chatInputTokens),
-            CreateChatRow("Chat Output", chatOutputTokens)
+            new(
+                "Chat Input",
+                $"[yellow]{FormatNumber(chatInputTokens)}[/]",
+                FormatCost(chatInputTokens / 1000m * Statics.Gpt41InputPrice),
+                FormatCost(chatInputTokens / 1000m * Statics.Gpt41MiniInputPrice),
+                FormatCost(chatInputTokens / 1000m * Statics.Gpt41NanoInputPrice)
+            ),
+            new(
+                "Chat Output",
+                $"[yellow]{FormatNumber(chatOutputTokens)}[/]",
+                FormatCost(chatOutputTokens / 1000m * Statics.Gpt41OutputPrice),
+                FormatCost(chatOutputTokens / 1000m * Statics.Gpt41MiniOutputPrice),
+                FormatCost(chatOutputTokens / 1000m * Statics.Gpt41NanoOutputPrice)
+            ),
         ];
 
         // AUDIO TABLE
@@ -45,7 +56,9 @@ internal static class TableHelper
             new TableColumn("Category").Centered(),
             new TableColumn("Count").Centered(),
             new TableColumn("TTS").LeftAligned(),
-            new TableColumn("TTS-HD").LeftAligned()
+            new TableColumn("TTS-HD").LeftAligned(),
+            new TableColumn("GPT-4o-Mini-TTS").LeftAligned(),
+            new TableColumn("GPT-4o-TTS").LeftAligned()
         ];
 
         List<Row> audioRows =
@@ -54,7 +67,9 @@ internal static class TableHelper
                 "Audio",
                 $"[yellow]{FormatNumber(audioInputChars)}[/]",
                 FormatCost(audioInputChars / 1000m * Statics.TTSPrice),
-                FormatCost(audioInputChars / 1000m * Statics.TTSHDPrice))
+                FormatCost(audioInputChars / 1000m * Statics.TTSHDPrice),
+                FormatCost(audioInputChars / 1000m * Statics.GPT4oMiniTTSPrice),
+                FormatCost(audioInputChars / 1000m * Statics.GPT4oTTSPrice))
         ];
 
         // IMAGE TABLE (only if generated)
@@ -118,19 +133,6 @@ internal static class TableHelper
 
         return table;
     }
-
-    /// <summary>
-    /// Creates a chat-related cost row with token count and model costs.
-    /// </summary>
-    private static Row CreateChatRow(string label, int tokens) =>
-        new(
-            label,
-            $"[yellow]{FormatNumber(tokens)}[/]",
-            FormatCost(tokens / 1000m * Statics.Gpt4oMiniInputPrice),
-            FormatCost(tokens / 1000m * Statics.Gpt4oInputPrice),
-            FormatCost(tokens / 1000m * Statics.Gpt4TurboInputPrice),
-            FormatCost(tokens / 1000m * Statics.Gpt4InputPrice)
-        );
 
     /// <summary>
     /// Formats a cost value as a currency string (USD).
