@@ -12,8 +12,8 @@ This repository contains a console application written in .NET 9 to create a pod
 
 To use this application, you need an Azure OpenAI instance running in Azure. Additionally, you'll need to deploy the following models:
 
-- **Chat model**, e.g., `gpt-4o-mini` or `gpt-4o`
-- **TTS model**, e.g., `tts` or `tts-hd`
+- **Chat model**, e.g., `gpt-4.1` or `gpt-4.1-mini`
+- **TTS model**, e.g., `tts`, `tts-hd` or `gpt-4o-mini-tts`
 - **Image model**, e.g., `dall-e-3`
 
 You can either add your credentials to the file `Secrets.cs` in the `Utils` folder or start the console application directly. In the latter case, you will be prompted to enter the required information.
