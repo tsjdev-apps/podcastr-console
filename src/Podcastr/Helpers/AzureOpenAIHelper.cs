@@ -10,28 +10,24 @@ using System.Text.Json;
 namespace Podcastr.Helpers;
 
 /// <summary>
-///     Helper class for interacting with Azure OpenAI services 
-///     for podcast-related tasks.
+/// Helper methods for interacting with Azure OpenAI services 
+/// to generate podcast content, audio, and cover images.
 /// </summary>
 internal static class AzureOpenAIHelper
 {
-    /// <summary>
-    ///     JSON serializer options with case-insensitive property name matching.
-    /// </summary>
     private static readonly JsonSerializerOptions _jsonSerializerOptions =
         new() { PropertyNameCaseInsensitive = true };
 
     /// <summary>
-    ///     Retrieves podcast content asynchronously using the provided chat client.
+    /// Retrieves podcast content based on the provided HTML input.
     /// </summary>
     /// <param name="chatClient">The Azure OpenAI chat client.</param>
-    /// <param name="htmlContent">The HTML content to be processed.</param>
+    /// <param name="htmlContent">The input HTML content.</param>
     /// <param name="podcastName">The name of the podcast.</param>
     /// <param name="podcastLanguage">The language of the podcast.</param>
-    /// <returns>A task that represents the asynchronous operation. 
-    /// The task result contains the podcast content.</returns>
-    /// <exception cref="AzureOpenAIException">Thrown when there is an 
-    /// error retrieving the podcast content.</exception>
+    /// <returns>A <see cref="PodcastContent"/> object containing script, 
+    /// description, and social posts; or null if deserialization fails.</returns>
+    /// <exception cref="AzureOpenAIException">Thrown when the request to OpenAI fails.</exception>
     public static async Task<PodcastContent?> GetPodcastContentAsync(
         ChatClient chatClient,
         string? htmlContent,
@@ -40,12 +36,12 @@ internal static class AzureOpenAIHelper
     {
         try
         {
-            // Configure chat completion options
             ChatCompletionOptions options = new()
             {
+                Temperature = 0.7f,
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
                     "podcast_content",
-                    jsonSchema: BinaryData.FromString(
+                    BinaryData.FromString(
                         /* language=JSON */
                         """
                         {
@@ -62,80 +58,51 @@ internal static class AzureOpenAIHelper
                             "socialMediaPosts": {
                               "type": "object",
                               "properties": {
-                                "linkedIn": {
-                                  "type": "string",
-                                  "description": "The LinkedIn post for the podcast"
-                                },
-                                "twitter": {
-                                  "type": "string",
-                                  "description": "The Twitter post for the podcast"
-                                },
-                                "facebook": {
-                                  "type": "string",
-                                  "description": "The Facebook post for the podcast"
-                                }, 
-                                "threads": {
-                                  "type": "string",
-                                  "description": "The Threads post for the podcast"
-                                }
+                                "linkedIn": { "type": "string" },
+                                "twitter":  { "type": "string" },
+                                "facebook": { "type": "string" },
+                                "threads":  { "type": "string" }
                               },
                               "required": ["linkedIn", "twitter", "facebook", "threads"],
-                              "addionalProperties": false,
-                              "description": "Social media posts for various platforms"
+                              "additionalProperties": false
                             }
                           },
                           "required": ["script", "description", "socialMediaPosts"],
                           "additionalProperties": false
                         }
-                        """)),
-                Temperature = 0.7f,
+                        """))
             };
 
-            // Prepare the system message with relevant context
-            SystemChatMessage systemChatMessage =
-                ChatMessage.CreateSystemMessage(
-                    ChatMessageContentPart.CreateTextPart(
-                        string.Format(
-                            Statics.PodcastPrompt,
-                            podcastName,
-                            podcastLanguage,
-                            htmlContent)));
+            SystemChatMessage systemChatMessage = ChatMessage.CreateSystemMessage(
+                ChatMessageContentPart.CreateTextPart(
+                    string.Format(Statics.PodcastPrompt, podcastName, podcastLanguage, htmlContent)));
 
-            // Request completion from the OpenAI service
-            ClientResult<ChatCompletion> chatResult =
-                await chatClient.CompleteChatAsync(
-                    [systemChatMessage],
-                    options);
+            ClientResult<ChatCompletion> chatResult = await chatClient.CompleteChatAsync([systemChatMessage], options);
 
-            // Get Input Tokens and Output Tokens
             ChatTokenUsage usage = chatResult.Value.Usage;
             TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
             TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
 
-            // Extract and return the content from the response
-            using JsonDocument structuredJson =
-                JsonDocument.Parse(chatResult.Value.Content[0].Text);
+            using JsonDocument structuredJson = JsonDocument.Parse(chatResult.Value.Content[0].Text);
 
             return JsonSerializer.Deserialize<PodcastContent>(
-                structuredJson.RootElement.ToString(),
-                _jsonSerializerOptions);
+                structuredJson.RootElement.ToString(), _jsonSerializerOptions);
         }
         catch (Exception ex)
         {
-            // Wrap and rethrow exceptions for better error tracing
-            throw new AzureOpenAIException(
-                $"Error retrieving podcast content: {ex.Message}",
-                ex);
+            throw new AzureOpenAIException("Error retrieving podcast content.", ex);
         }
     }
 
     /// <summary>
-    ///     Generates podcast audio based on the provided script and voice settings.
+    /// Generates audio from the provided podcast script using 
+    /// Azure OpenAI speech synthesis.
     /// </summary>
-    /// <param name="audioClient">The Azure OpenAI audio client.</param>
-    /// <param name="podcastScript">The script of the podcast.</param>
-    /// <param name="voice">The desired voice for the audio.</param>
-    /// <returns>A byte array containing the generated audio.</returns>
+    /// <param name="audioClient">The audio generation client.</param>
+    /// <param name="podcastScript">The text to synthesize.</param>
+    /// <param name="voice">The name of the voice to use (e.g., 'Nova').</param>
+    /// <returns>The synthesized audio as a byte array; 
+    /// empty if generation fails.</returns>
     public static async Task<byte[]> GetPodcastAudioAsync(
         AudioClient audioClient,
         string? podcastScript,
@@ -143,33 +110,33 @@ internal static class AzureOpenAIHelper
     {
         try
         {
-            // Generate speech from the script
-            ClientResult<BinaryData> audioResult =
-                await audioClient.GenerateSpeechAsync(
-                    podcastScript,
-                    new GeneratedSpeechVoice(voice.ToLower()));
+            if (string.IsNullOrWhiteSpace(podcastScript))
+            {
+                return [];
+            }
 
-            // Add Audio Characters
-            TokenUsageHelper.AddAudioInputCharacters(podcastScript?.Length ?? 0);
+            ClientResult<BinaryData> audioResult = await audioClient.GenerateSpeechAsync(
+                podcastScript,
+                new GeneratedSpeechVoice(voice.ToLower()));
 
-            // Return the audio as a byte array
+            TokenUsageHelper.AddAudioInputCharacters(podcastScript.Length);
+
             return audioResult.Value.ToArray();
         }
         catch (Exception ex)
         {
-            // Log and return an empty array in case of an error
             ConsoleHelper.WriteError($"Error generating podcast audio: {ex.Message}");
             return [];
         }
     }
 
     /// <summary>
-    ///     Generates a podcast cover image based on the provided script.
+    /// Generates a podcast cover image based on the script content.
     /// </summary>
-    /// <param name="chatClient">The Azure OpenAI chat client.</param>
-    /// <param name="imageClient">The Azure OpenAI image client.</param>
-    /// <param name="podcastScript">The script of the podcast.</param>
-    /// <returns>A byte array containing the generated cover image.</returns>
+    /// <param name="chatClient">The chat client used to generate the image prompt.</param>
+    /// <param name="imageClient">The image client used to generate the image.</param>
+    /// <param name="podcastScript">The podcast script used to derive the image description.</param>
+    /// <returns>The generated cover image as a byte array; empty if generation fails.</returns>
     public static async Task<byte[]> GetPodcastCoverAsync(
         ChatClient chatClient,
         ImageClient imageClient,
@@ -177,53 +144,45 @@ internal static class AzureOpenAIHelper
     {
         try
         {
-            // Configure chat completion options for generating an image prompt
+            if (string.IsNullOrWhiteSpace(podcastScript))
+            {
+                return [];
+            }
+
             ChatCompletionOptions chatOptions = new()
             {
-                MaxOutputTokenCount = 1000,
                 Temperature = 0.7f,
+                MaxOutputTokenCount = 1000
             };
 
-            // Generate a descriptive prompt for the cover image
-            SystemChatMessage systemChatMessage =
-                ChatMessage.CreateSystemMessage(
-                    ChatMessageContentPart.CreateTextPart(
-                        string.Format(
-                            Statics.PodcastCoverPreparationPrompt,
-                            podcastScript)));
+            SystemChatMessage systemChatMessage = ChatMessage.CreateSystemMessage(
+                ChatMessageContentPart.CreateTextPart(
+                    string.Format(Statics.PodcastCoverPreparationPrompt, podcastScript)));
 
-            ClientResult<ChatCompletion> chatResult =
-                await chatClient.CompleteChatAsync(
-                    [systemChatMessage],
-                    chatOptions);
+            ClientResult<ChatCompletion> chatResult = 
+                await chatClient.CompleteChatAsync([systemChatMessage], chatOptions);
 
-            // Get Input Tokens and Output Tokens
             ChatTokenUsage usage = chatResult.Value.Usage;
             TokenUsageHelper.AddChatInputTokenCount(usage.InputTokenCount);
             TokenUsageHelper.AddChatOutputTokenCount(usage.OutputTokenCount);
 
-            // Extract the generated image prompt
             string imagePrompt = chatResult.Value.Content[0].Text;
 
-            // Configure image generation options
-            ImageGenerationOptions imageOptions = new()
+            ImageGenerationOptions imageOptions = new ImageGenerationOptions
             {
                 Quality = GeneratedImageQuality.Standard,
                 ResponseFormat = GeneratedImageFormat.Bytes,
                 Style = GeneratedImageStyle.Vivid,
-                Size = GeneratedImageSize.W1024xH1024,
+                Size = GeneratedImageSize.W1024xH1024
             };
 
-            // Generate the image based on the prompt
-            ClientResult<GeneratedImage> imageResult =
+            ClientResult<GeneratedImage> imageResult = 
                 await imageClient.GenerateImageAsync(imagePrompt, imageOptions);
 
-            // Return the generated image as a byte array
             return imageResult.Value.ImageBytes.ToArray();
         }
         catch (Exception ex)
         {
-            // Log and return an empty array in case of an error
             ConsoleHelper.WriteError($"Error generating podcast cover: {ex.Message}");
             return [];
         }

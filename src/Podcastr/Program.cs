@@ -8,213 +8,188 @@ using Podcastr.Models;
 using Podcastr.Utils;
 using System.ClientModel;
 
+// Clients and control flags
 ChatClient? chatClient = null;
 AudioClient? audioClient = null;
 ImageClient? imageClient = null;
 bool shouldRepeat = true;
 
-// Show the application header
+// Display app header
 ConsoleHelper.ShowHeader();
 
-// Get the Azure OpenAI endpoint URL from the user
-var azureOpenAIEndpoint = Secrets.AzureOpenAIEndpoint ??
+#region User Configuration
+
+string azureOpenAIEndpoint = Secrets.AzureOpenAIEndpoint ??
     ConsoleHelper.GetUrlFromConsole(
-        "Enter your [yellow]Azure OpenAI endpoint[/] endpoint URL:",
-        false);
+        "Enter your [yellow]Azure OpenAI endpoint[/] URL:", false);
 
-// Get the Azure OpenAI key from the user
-var azureOpenAIKey = Secrets.AzureOpenAIKey ??
+string azureOpenAIKey = Secrets.AzureOpenAIKey ??
     ConsoleHelper.GetStringFromConsole(
-        "Enter your [yellow]Azure OpenAI key[/] key:",
-        showHeader: false);
+        "Enter your [yellow]Azure OpenAI key[/]:", false);
 
-// Get the Azure OpenAI Chat model name
-var chatModelName = Secrets.AzureOpenAIChatModelName ??
+string chatModelName = Secrets.AzureOpenAIChatModelName ??
     ConsoleHelper.GetStringFromConsole(
-        "Enter your [yellow]Azure OpenAI Chat model[/] name:",
-        showHeader: false);
+        "Enter your [yellow]Chat model name[/]:", false);
 
-// Get the Azure OpenAI Audio model name
-var audioModelName = Secrets.AzureOpenAIAudioModelName ??
+string audioModelName = Secrets.AzureOpenAIAudioModelName ??
     ConsoleHelper.GetStringFromConsole(
-        "Enter your [yellow]Azure OpenAI Audio model[/] name:",
-        showHeader: false);
+        "Enter your [yellow]Audio model name[/]:", false);
 
-// Get the Azure OpenAI Image model name
-var imageModelName = Secrets.AzureOpenAIImageModelName ??
+string imageModelName = Secrets.AzureOpenAIImageModelName ??
     ConsoleHelper.GetStringFromConsole(
-        "Enter your [yellow]Azure OpenAI Image model[/] name:",
-        showHeader: false);
+        "Enter your [yellow]Image model name[/]:", false);
 
-// Create the Azure OpenAI Client
+#endregion
+
+#region Client Initialization
+
 AzureOpenAIClient azureOpenAIClient = new(
     new Uri(azureOpenAIEndpoint),
     new ApiKeyCredential(azureOpenAIKey));
 
-// Initialize service-specific clients
-chatClient =
-    azureOpenAIClient.GetChatClient(chatModelName);
-audioClient =
-    azureOpenAIClient.GetAudioClient(audioModelName);
-imageClient =
-    azureOpenAIClient.GetImageClient(imageModelName);
+chatClient = azureOpenAIClient.GetChatClient(chatModelName);
+audioClient = azureOpenAIClient.GetAudioClient(audioModelName);
+imageClient = azureOpenAIClient.GetImageClient(imageModelName);
 
+#endregion
 
-// Main loop for processing multiple podcasts
+#region Main Loop
+
 while (shouldRepeat)
 {
     ConsoleHelper.ShowHeader();
-
-    // Reset TokenUsage
     TokenUsageHelper.Reset();
 
-    // Get an URL from the user containing the content
-    var contentUrl =
+    // === Collect Podcast Metadata ===
+    string contentUrl =
         ConsoleHelper.GetStringFromConsole(
             "Enter the [yellow]URL[/] of the content:");
 
-    // Get the name of the podcast
-    var podcastName =
+    string podcastName =
         ConsoleHelper.GetStringFromConsole(
             "Enter the [yellow]name[/] of the podcast:");
-
-    // Get the language of the podcast
-    var podcastLanguage =
+    string podcastLanguage =
         ConsoleHelper.SelectFromOptions(
             Statics.PodcastLanguages,
             "Select the [yellow]language[/] of the podcast");
 
-    // Get the voice of the podcast
-    var podcastVoice =
+    string podcastVoice =
         ConsoleHelper.SelectFromOptions(
             Statics.PodcastVoices,
             "Select the [yellow]voice[/] of the podcast");
 
-    // Show the header
     ConsoleHelper.ShowHeader();
 
-    // Get the content from the URL
-    var content = await ExecuteWithHandlingAsync("Loading content...",
-        async () => await WebsiteHelper.GetHtmlBodyAsync(contentUrl));
+    // === Load & Process Content ===
+    string? content = await ExecuteWithHandlingAsync(
+        "Loading content",
+        () => WebsiteHelper.GetHtmlBodyAsync(
+            contentUrl));
 
     if (!ValidateStep(content, "Loading content", ref shouldRepeat))
+    {
         continue;
+    }
 
-    // Get the podcast script
     PodcastContent? podcastContent = await ExecuteWithHandlingAsync(
-        "Generating podcast script, description and Social Media Posts...",
-        async () => await AzureOpenAIHelper.GetPodcastContentAsync(
+        "Generating podcast content",
+        () => AzureOpenAIHelper.GetPodcastContentAsync(
             chatClient,
             content,
             podcastName,
             podcastLanguage));
 
     if (!ValidateStep(podcastContent, "Podcast content generation", ref shouldRepeat))
+    {
         continue;
+    }
 
-    // Start parallel tasks for remaining operations
-    var audioTask = ExecuteWithHandlingAsync("Generating podcast audio...",
-        async () => await AzureOpenAIHelper.GetPodcastAudioAsync(
+    // === Parallel Processing ===
+    Task<byte[]?> audioTask = ExecuteWithHandlingAsync(
+        "Generating audio",
+        () => AzureOpenAIHelper.GetPodcastAudioAsync(
             audioClient,
             podcastContent?.Script,
             podcastVoice));
 
-    var imageTask = ExecuteWithHandlingAsync("Generating podcast image...",
-        async () => await AzureOpenAIHelper.GetPodcastCoverAsync(
+    Task<byte[]?> imageTask = ExecuteWithHandlingAsync(
+        "Generating image",
+        () => AzureOpenAIHelper.GetPodcastCoverAsync(
             chatClient,
             imageClient,
             podcastContent?.Script));
 
-    // Wait for all tasks to complete
     await Task.WhenAll(audioTask, imageTask);
 
-    // Get results from completed tasks
-    var podcastAudio = audioTask.Result;
-    var podcastImage = imageTask.Result;
+    byte[]? podcastAudio = audioTask.Result;
+    byte[]? podcastImage = imageTask.Result;
 
-    // Validate results
-    if (!ValidateStep(podcastAudio, "Podcast audio generation", ref shouldRepeat) ||
-        !ValidateStep(podcastImage, "Podcast image generation", ref shouldRepeat))
+    if (!ValidateStep(podcastAudio, "Audio generation", ref shouldRepeat) ||
+        !ValidateStep(podcastImage, "Image generation", ref shouldRepeat))
     {
         continue;
     }
 
-    // Create Zip Archive containing all the created files
-    var zipArchive = await ExecuteWithHandlingAsync("Creating zip archive...",
-        () => Task.FromResult(ZipArchiveHelper.CreateZipArchive(
-            [
-                new ZipElement(
-                    podcastContent?.Script,
-                    null,
-                    "podcast-script.txt"),
-                new ZipElement(
-                    podcastContent?.Description,
-                    null,
-                    "podcast-description.txt"),
-                new ZipElement(
-                    podcastContent?.SocialMediaPosts?.LinkedIn,
-                    null,
-                    "podcast-socialmediaposts-linkedin.txt"),
-                new ZipElement(
-                    podcastContent?.SocialMediaPosts?.Facebook,
-                    null,
-                    "podcast-socialmediaposts-facebook.txt"),
-                new ZipElement(
-                    podcastContent?.SocialMediaPosts?.Twitter,
-                    null,
-                    "podcast-socialmediaposts-twitter.txt"),
-                new ZipElement(
-                    null,
-                    podcastAudio,
-                    "podcast-audio.mp3"),
-                new ZipElement(
-                    null,
-                    podcastImage,
-                    "podcast-image.png")
-            ])));
+    // === Create ZIP Archive ===
+    byte[]? zipArchive = await ExecuteWithHandlingAsync(
+        "Creating ZIP archive",
+        () => Task.FromResult(ZipArchiveHelper.CreateZipArchive([
+            new ZipElement(podcastContent?.Script, null, "podcast-script.txt"),
+            new ZipElement(podcastContent?.Description, null, "podcast-description.txt"),
+            new ZipElement(podcastContent?.SocialMediaPosts?.LinkedIn, null, "social-linkedin.txt"),
+            new ZipElement(podcastContent?.SocialMediaPosts?.Facebook, null, "social-facebook.txt"),
+            new ZipElement(podcastContent?.SocialMediaPosts?.Twitter, null, "social-twitter.txt"),
+            new ZipElement(podcastContent?.SocialMediaPosts?.Threads, null, "social-threads.txt"),
+            new ZipElement(null, podcastAudio, "podcast-audio.mp3"),
+            new ZipElement(null, podcastImage, "podcast-image.png")
+        ])));
 
-    if (!ValidateStep(zipArchive, "Creating zip archive", ref shouldRepeat))
+    if (!ValidateStep(zipArchive, "ZIP archive creation", ref shouldRepeat))
+    {
         continue;
+    }
 
-    // Save the zip archive to disk
-    var zipFilePath = await FileHelper.WriteToTempFolderAsync(zipArchive);
-    ConsoleHelper.WriteMessage($"Zip archive saved to [link][yellow]{zipFilePath}[/][/]");
+    string zipPath = await FileHelper.WriteToTempFolderAsync(zipArchive);
+    ConsoleHelper.WriteMessage($"ZIP archive saved to [link][yellow]{zipPath}[/][/]");
 
-    // Show the tables with the costs
+    // === Show Cost Table ===
     TableHelper.ShowTable(podcastImage is not null);
 
-    shouldRepeat = ConsoleHelper.GetConfirmation("Do you want to repeat the process?", false);
+    shouldRepeat = ConsoleHelper.GetConfirmation(
+        "Do you want to create another podcast?", 
+        false);
 }
 
-// Wrapper to execute operations with error handling
-static async Task<T?> ExecuteWithHandlingAsync<T>(string operationDescription, Func<Task<T>> operation)
+#endregion
+
+#region Helpers
+
+static async Task<T?> ExecuteWithHandlingAsync<T>(
+    string description, 
+    Func<Task<T>> operation)
 {
     try
     {
-        ConsoleHelper.WriteMessage($"{operationDescription}...");
+        ConsoleHelper.WriteMessage($"{description}...");
         return await operation();
     }
     catch (AzureOpenAIException ex)
     {
-        ConsoleHelper.WriteError($"{operationDescription} failed: {ex.Message}");
+        ConsoleHelper.WriteError($"{description} failed: {ex.Message}");
         return default;
     }
 }
 
-// Validate step output and determine whether to continue
-static bool ValidateStep<T>(T value, string stepDescription, ref bool shouldRepeat)
+static bool ValidateStep<T>(T? result, string step, ref bool shouldRepeat)
 {
-    if (value == null || (value is string str && string.IsNullOrEmpty(str)))
+    if (result is null || (result is string str && string.IsNullOrWhiteSpace(str)))
     {
-        ConsoleHelper.WriteError($"{stepDescription} failed.");
-
-        shouldRepeat =
-            ConsoleHelper.GetConfirmation(
-                "Do you want to restart the process?",
-                true);
-
+        ConsoleHelper.WriteError($"{step} failed.");
+        shouldRepeat = ConsoleHelper.GetConfirmation("Would you like to retry?", true);
         return false;
     }
 
     return true;
 }
+
+#endregion

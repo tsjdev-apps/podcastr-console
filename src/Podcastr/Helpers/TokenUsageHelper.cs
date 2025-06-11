@@ -1,70 +1,61 @@
 ﻿namespace Podcastr.Helpers;
 
 /// <summary>
-///     Helper class to track and manage token usage and 
-///     audio input characters.
+/// Provides methods to track and manage token usage 
+/// and audio input character counts.
 /// </summary>
 public static class TokenUsageHelper
 {
-    private static int _chatInputTokenCount = 0;
-    private static int _chatOutputTokenCount = 0;
-    private static int _audioInputCharacters = 0;
+    private static int _chatInputTokenCount;
+    private static int _chatOutputTokenCount;
+    private static int _audioInputCharacters;
 
     /// <summary>
-    ///     Resets the token counts and audio input characters to zero.
+    /// Resets all tracked usage counters to zero.
     /// </summary>
     public static void Reset()
     {
-        _chatInputTokenCount = 0;
-        _chatOutputTokenCount = 0;
-        _audioInputCharacters = 0;
+        Interlocked.Exchange(ref _chatInputTokenCount, 0);
+        Interlocked.Exchange(ref _chatOutputTokenCount, 0);
+        Interlocked.Exchange(ref _audioInputCharacters, 0);
     }
 
     /// <summary>
-    ///     Gets the count of chat input tokens.
+    /// Gets the total number of chat input tokens recorded.
     /// </summary>
-    /// <returns>The count of chat input tokens.</returns>
-    public static int GetChatInputTokenCount()
+    public static int GetChatInputTokenCount() 
         => _chatInputTokenCount;
 
     /// <summary>
-    ///     Gets the count of chat output tokens.
+    /// Gets the total number of chat output tokens recorded.
     /// </summary>
-    /// <returns>The count of chat output tokens.</returns>
-    public static int GetChatOutputTokenCount()
+    public static int GetChatOutputTokenCount() 
         => _chatOutputTokenCount;
 
     /// <summary>
-    ///     Gets the count of audio input characters.
+    /// Gets the total number of audio input characters recorded.
     /// </summary>
-    /// <returns>The count of audio input characters.</returns>
-    public static int GetAudioInputCharacters()
+    public static int GetAudioInputCharacters() 
         => _audioInputCharacters;
 
     /// <summary>
-    ///     Adds to the count of chat input tokens.
+    /// Adds to the total count of chat input tokens.
     /// </summary>
-    /// <param name="chatInputTokenCount">The number of chat input tokens to add.</param>
-    public static void AddChatInputTokenCount(int chatInputTokenCount)
-    {
-        _chatInputTokenCount += chatInputTokenCount;
-    }
+    /// <param name="count">The number of input tokens to add.</param>
+    public static void AddChatInputTokenCount(int count)
+        => Interlocked.Add(ref _chatInputTokenCount, count);
 
     /// <summary>
-    ///     Adds to the count of chat output tokens.
+    /// Adds to the total count of chat output tokens.
     /// </summary>
-    /// <param name="chatOutputTokenCount">The number of chat output tokens to add.</param>
-    public static void AddChatOutputTokenCount(int chatOutputTokenCount)
-    {
-        _chatOutputTokenCount += chatOutputTokenCount;
-    }
+    /// <param name="count">The number of output tokens to add.</param>
+    public static void AddChatOutputTokenCount(int count)
+        => Interlocked.Add(ref _chatOutputTokenCount, count);
 
     /// <summary>
-    ///     Adds to the count of audio input characters.
+    /// Adds to the total count of audio input characters.
     /// </summary>
-    /// <param name="audioInputCharacters">The number of audio input characters to add.</param>
-    public static void AddAudioInputCharacters(int audioInputCharacters)
-    {
-        _audioInputCharacters += audioInputCharacters;
-    }
+    /// <param name="count">The number of audio input characters to add.</param>
+    public static void AddAudioInputCharacters(int count)
+        => Interlocked.Add(ref _audioInputCharacters, count);
 }
