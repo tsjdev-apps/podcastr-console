@@ -1,14 +1,15 @@
 ﻿namespace Podcastr.Models;
 
 /// <summary>
-///     Represents the content of a podcast, 
-///     including the script, description, and social media posts.
+/// Represents the generated content of a podcast,
+/// including its script, description, and associated social media posts.
 /// </summary>
-/// <param name="Script">The script of the podcast.</param>
-/// <param name="Description">The description of 
-/// the podcast.</param>
-/// <param name="SocialMediaPosts">The social media posts 
-/// related to the podcast.</param>
+/// <param name="Script">
+/// The full script of the podcast episode.</param>
+/// <param name="Description">
+/// A short textual summary describing the episode.</param>
+/// <param name="SocialMediaPosts">
+/// Platform-specific social media post texts to promote the episode.</param>
 internal record PodcastContent(
     string Script,
     string Description,

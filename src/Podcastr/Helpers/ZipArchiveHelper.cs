@@ -5,17 +5,18 @@ using System.Text;
 namespace Podcastr.Helpers;
 
 /// <summary>
-///     Helper class for creating ZIP archives 
-///     from text or byte content.
+/// Provides utility methods for creating ZIP archives 
+/// from text and binary content.
 /// </summary>
 internal static class ZipArchiveHelper
 {
     /// <summary>
-    ///     Creates a ZIP archive containing the provided elements.
+    /// Creates a ZIP archive from the specified elements.
     /// </summary>
-    /// <param name="zipElements">A collection of elements to 
-    ///                           include in the ZIP archive.</param>
-    /// <returns>A byte array representing the ZIP archive.</returns>
+    /// <param name="zipElements">A collection of elements 
+    /// to include in the ZIP archive.</param>
+    /// <returns>A byte array representing the created ZIP archive. 
+    /// Returns an empty array if input is null.</returns>
     public static byte[] CreateZipArchive(
         IEnumerable<ZipElement> zipElements)
     {
@@ -25,88 +26,67 @@ internal static class ZipArchiveHelper
             return [];
         }
 
-        // Create a memory stream to store the ZIP file
         using MemoryStream memoryStream = new();
 
-        // Create the ZIP archive
-        using (ZipArchive zipArchive =
-            new(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+        using (ZipArchive zipArchive = new(
+            memoryStream, 
+            ZipArchiveMode.Create, 
+            leaveOpen: true))
         {
-            foreach (ZipElement zipElement in zipElements)
+            foreach (ZipElement element in zipElements)
             {
-                // Validate file name
-                if (string.IsNullOrWhiteSpace(zipElement.FileName))
+                if (string.IsNullOrWhiteSpace(element.FileName))
                 {
-                    Console.WriteLine(
-                        "FileName cannot be null or empty in a ZIP element.");
+                    ConsoleHelper.WriteError(
+                        "ZIP element is missing a valid file name.");
                     continue;
                 }
 
-                // Add text content if present
-                if (!string.IsNullOrWhiteSpace(zipElement.TextContent))
+                if (!string.IsNullOrWhiteSpace(element.TextContent))
                 {
-                    CreateTextZipEntry(
-                        zipArchive,
-                        zipElement.FileName,
-                        zipElement.TextContent);
+                    AddTextEntry(
+                        zipArchive, element.FileName, element.TextContent);
                 }
-                // Add byte content if present
-                else if (zipElement.ByteContent is not null
-                    && zipElement.ByteContent.Length > 0)
+                else if (element.ByteContent is { Length: > 0 })
                 {
-                    CreateByteArrayZipEntry(
-                        zipArchive,
-                        zipElement.FileName,
-                        zipElement.ByteContent);
+                    AddBinaryEntry(
+                        zipArchive, element.FileName, element.ByteContent);
+                }
+                else
+                {
+                    ConsoleHelper.WriteError(
+                        $"ZIP element '{element.FileName}' has no content.");
                 }
             }
         }
 
-        // Reset the memory stream position and
-        // return the ZIP file as a byte array
         memoryStream.Seek(0, SeekOrigin.Begin);
         return memoryStream.ToArray();
     }
 
     /// <summary>
-    ///     Adds a text file entry to the ZIP archive.
+    /// Adds a text file entry to the ZIP archive.
     /// </summary>
-    /// <param name="zipArchive">The ZIP archive to modify.</param>
-    /// <param name="fileName">The name of the text file entry.</param>
-    /// <param name="content">The text content to include.</param>
-    private static void CreateTextZipEntry(
-        ZipArchive zipArchive,
-        string fileName,
+    private static void AddTextEntry(
+        ZipArchive archive, 
+        string fileName, 
         string content)
     {
-        // Create a new entry for the text file
-        ZipArchiveEntry entry = 
-            zipArchive.CreateEntry(fileName);
-
-        // Write the text content using a StreamWriter with UTF-8 encoding
-        using StreamWriter writer = 
-            new(entry.Open(), Encoding.UTF8);
+        ZipArchiveEntry entry = archive.CreateEntry(fileName);
+        using StreamWriter writer = new(entry.Open(), Encoding.UTF8);
         writer.Write(content);
     }
 
     /// <summary>
-    /// A   dds a binary file entry to the ZIP archive.
+    /// Adds a binary file entry to the ZIP archive.
     /// </summary>
-    /// <param name="zipArchive">The ZIP archive to modify.</param>
-    /// <param name="fileName">The name of the binary file entry.</param>
-    /// <param name="content">The byte array content to include.</param>
-    private static void CreateByteArrayZipEntry(
-        ZipArchive zipArchive,
-        string fileName,
+    private static void AddBinaryEntry(
+        ZipArchive archive, 
+        string fileName, 
         byte[] content)
     {
-        // Create a new entry for the binary file
-        ZipArchiveEntry entry = 
-            zipArchive.CreateEntry(fileName);
-
-        // Write the byte content directly to the entry's stream
-        using Stream stream = 
-            entry.Open();
+        ZipArchiveEntry entry = archive.CreateEntry(fileName);
+        using Stream stream = entry.Open();
         stream.Write(content, 0, content.Length);
     }
 }
