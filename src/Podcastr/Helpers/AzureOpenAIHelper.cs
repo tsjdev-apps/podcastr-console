@@ -70,12 +70,16 @@ internal static class AzureOpenAIHelper
                                   "type": "string",
                                   "description": "The Twitter post for the podcast"
                                 },
-                                "Facebook": {
+                                "facebook": {
                                   "type": "string",
                                   "description": "The Facebook post for the podcast"
+                                }, 
+                                "threads": {
+                                  "type": "string",
+                                  "description": "The Threads post for the podcast"
                                 }
                               },
-                              "required": ["linkedIn", "twitter", "facebook"],
+                              "required": ["linkedIn", "twitter", "facebook", "threads"],
                               "addionalProperties": false,
                               "description": "Social media posts for various platforms"
                             }

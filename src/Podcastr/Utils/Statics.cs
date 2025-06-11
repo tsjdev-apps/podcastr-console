@@ -22,10 +22,13 @@ internal static class Statics
     public static readonly List<string> PodcastVoices =
     [
         "Alloy",
+        "Ash",
+        "Coral",
         "Echo",
         "Fable",
         "Onyx",
         "Nova",
+        "Sage",
         "Shimmer"
     ];
 
@@ -99,7 +102,7 @@ internal static class Statics
     ///     Prompt for generating a podcast script based on input text.
     /// </summary>
     public const string PodcastPrompt =
-        "Please create an engaging and captivating podcast from the following text with the title {0}. The podcast should be written in {1} and have a maximum reading duration of 5 minutes. It should include a brief, compelling introduction to the topic, followed by a clear and accessible presentation of the main content. The tone should be entertaining and aimed at a broad audience. Avoid stage directions or headings and focus directly on the podcast content. Please create also a concise and engaging description of the podcast based on the provided script. The description should briefly summarize the key topic, appeal to a broad audience, and be suitable for podcast directories. Create finally engaging social media posts based on the provided podcast script. The posts should be creative, captivating, and concise, while incorporating humor or emotion depending on the context. Use emojis effectively to enhance the tone and convey the message. The content must match the language of the original script (e.g., German or English). For LinkedIn, craft a professional yet personal post that highlights key takeaways, insights, or thought-provoking questions. Keep it under 280 words and include at least three relevant emojis. For Twitter (X), write a short and snappy post that grabs attention, staying within the 280-character limit. Use emojis strategically to draw attention. For Facebook, adopt a storytelling approach with a conversational tone, encouraging community interaction. This post can be up to 500 words and should creatively incorporate emojis to match the mood. Each platform’s unique audience and tone should be considered. Include a clear call-to-action when appropriate, such as 'Join the discussion!' or 'Tune in now!'. Here is the content: {2}";
+        "Please create an engaging and captivating podcast from the following text with the title {0}. The podcast script should be written in {1} and have a maximum reading duration of 5 minutes. It should include a brief, compelling introduction to the topic, followed by a clear and accessible presentation of the main content. The tone should be entertaining and aimed at a broad audience. Avoid stage directions or headings and focus directly on the podcast content. Please create also a concise and engaging description of the podcast based on the provided script. The description should briefly summarize the key topic, appeal to a broad audience, and be suitable for podcast directories. Create finally engaging social media posts based on the provided podcast script. The posts should be creative, captivating, and concise, while incorporating humor or emotion depending on the context. Use emojis effectively to enhance the tone and convey the message. The content must match the language of the original script (e.g., German or English). For LinkedIn, craft a professional yet personal post that highlights key takeaways, insights, or thought-provoking questions. Keep it under 280 words and include at least three relevant emojis. For Twitter (X), write a short and snappy post that grabs attention, staying within the 280-character limit. Use emojis strategically to draw attention. For Facebook, adopt a storytelling approach with a conversational tone, encouraging community interaction. This post can be up to 500 words and should creatively incorporate emojis to match the mood. For Threads create a concise and engaging post under 300 characters. Keep it light, expressive, and in tune with the platform’s casual, community-driven vibe. Include a clear call-to-action when appropriate, such as 'Join the discussion!' or 'Tune in now!'. Here is the content: {2}";
 
     /// <summary>
     ///     Prompt for generating an image description for creating a podcast cover.
