@@ -5,17 +5,16 @@ using Spectre.Console;
 namespace Podcastr.Helpers;
 
 /// <summary>
-/// Provides methods for displaying usage cost tables in the console.
+/// Provides methods for displaying usage metrics in the console.
 /// </summary>
 internal static class TableHelper
 {
     /// <summary>
-    /// Displays cost breakdown tables for chat, audio, 
-    /// and (optionally) image generation.
+    /// Displays usage metrics for chat, audio, and (optionally) image generation.
     /// </summary>
-    /// <param name="includeImageCosts">Indicates whether 
-    /// image generation costs should be shown.</param>
-    public static void ShowTable(bool includeImageCosts)
+    /// <param name="includeImageMetrics">Indicates whether 
+    /// image generation metrics should be shown.</param>
+    public static void ShowTable(bool includeImageMetrics)
     {
         // Retrieve usage metrics
         int chatInputTokens = TokenUsageHelper.GetChatInputTokenCount();
@@ -26,81 +25,62 @@ internal static class TableHelper
         List<TableColumn> chatColumns =
         [
             new TableColumn("Category").Centered(),
-            new TableColumn("Count").Centered(),
-            new TableColumn("GPT-4.1").LeftAligned(),
-            new TableColumn("GPT-4.1 mini").LeftAligned(),
-            new TableColumn("GPT-4.1 nano").LeftAligned()
+            new TableColumn("Count").Centered()
         ];
 
         List<Row> chatRows =
         [
             new(
-                "Chat Input",
-                $"[yellow]{FormatNumber(chatInputTokens)}[/]",
-                FormatCost(chatInputTokens / 1000m * Statics.Gpt41InputPrice),
-                FormatCost(chatInputTokens / 1000m * Statics.Gpt41MiniInputPrice),
-                FormatCost(chatInputTokens / 1000m * Statics.Gpt41NanoInputPrice)
+                "Chat Input Tokens",
+                $"[yellow]{FormatNumber(chatInputTokens)}[/]"
             ),
             new(
-                "Chat Output",
-                $"[yellow]{FormatNumber(chatOutputTokens)}[/]",
-                FormatCost(chatOutputTokens / 1000m * Statics.Gpt41OutputPrice),
-                FormatCost(chatOutputTokens / 1000m * Statics.Gpt41MiniOutputPrice),
-                FormatCost(chatOutputTokens / 1000m * Statics.Gpt41NanoOutputPrice)
-            ),
+                "Chat Output Tokens",
+                $"[yellow]{FormatNumber(chatOutputTokens)}[/]"
+            )
         ];
 
         // AUDIO TABLE
         List<TableColumn> audioColumns =
         [
             new TableColumn("Category").Centered(),
-            new TableColumn("Count").Centered(),
-            new TableColumn("TTS").LeftAligned(),
-            new TableColumn("TTS-HD").LeftAligned(),
-            new TableColumn("GPT-4o-Mini-TTS").LeftAligned(),
-            new TableColumn("GPT-4o-TTS").LeftAligned()
+            new TableColumn("Count").Centered()
         ];
 
         List<Row> audioRows =
         [
             new(
-                "Audio",
-                $"[yellow]{FormatNumber(audioInputChars)}[/]",
-                FormatCost(audioInputChars / 1000m * Statics.TTSPrice),
-                FormatCost(audioInputChars / 1000m * Statics.TTSHDPrice),
-                FormatCost(audioInputChars / 1000m * Statics.GPT4oMiniTTSPrice),
-                FormatCost(audioInputChars / 1000m * Statics.GPT4oTTSPrice))
+                "Audio Characters",
+                $"[yellow]{FormatNumber(audioInputChars)}[/]"
+            )
         ];
 
         // IMAGE TABLE (only if generated)
         Table? imageTable = null;
-        if (includeImageCosts)
+        if (includeImageMetrics)
         {
             List<TableColumn> imageColumns =
             [
                 new TableColumn("Category").Centered(),
-                new TableColumn("Count").Centered(),
-                new TableColumn("DALL-E-3 Standard").LeftAligned(),
-                new TableColumn("DALL-E-3 HD").LeftAligned()
+                new TableColumn("Count").Centered()
             ];
 
             List<Row> imageRows =
             [
                 new(
-                    "Image",
-                    "[yellow]1[/]",
-                    FormatCost(Statics.DallE3StandardPrice),
-                    FormatCost(Statics.DallE3HDPrice))
+                    "Images Generated",
+                    "[yellow]1[/]"
+                )
             ];
 
-            imageTable = CreateStyledTable("Image Costs", imageColumns, imageRows);
+            imageTable = CreateStyledTable("Image Metrics", imageColumns, imageRows);
         }
 
         // Render all tables
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(CreateStyledTable("Chat Costs", chatColumns, chatRows));
+        AnsiConsole.Write(CreateStyledTable("Chat Metrics", chatColumns, chatRows));
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(CreateStyledTable("Audio Costs", audioColumns, audioRows));
+        AnsiConsole.Write(CreateStyledTable("Audio Metrics", audioColumns, audioRows));
 
         if (imageTable is not null)
         {
@@ -133,12 +113,6 @@ internal static class TableHelper
 
         return table;
     }
-
-    /// <summary>
-    /// Formats a cost value as a currency string (USD).
-    /// </summary>
-    private static string FormatCost(decimal cost)
-        => $"${cost:F2}";
 
     /// <summary>
     /// Formats a number with thousand separators.
