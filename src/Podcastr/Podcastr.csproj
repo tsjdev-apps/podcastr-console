@@ -8,10 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.2.0-beta.4" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
-    <PackageReference Include="Spectre.Console" Version="0.50.0" />
-    <PackageReference Include="System.Text.Json" Version="9.0.6" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.7.0-beta.2" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
+    <PackageReference Include="Spectre.Console" Version="0.54.0" />
   </ItemGroup>
 
 </Project>
