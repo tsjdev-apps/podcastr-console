@@ -31,36 +31,7 @@ internal static class Statics
         "Sage",
         "Shimmer"
     ];
-
-    // -----------------------------
-    // Token Prices (per 1000 tokens)
-    // -----------------------------
-
-    public static readonly decimal Gpt41InputPrice = 0.002m;
-    public static readonly decimal Gpt41OutputPrice = 0.008m;
-
-    public static readonly decimal Gpt41MiniInputPrice = 0.0004m;
-    public static readonly decimal Gpt41MiniOutputPrice = 0.0016m;
-
-    public static readonly decimal Gpt41NanoInputPrice = 0.0001m;
-    public static readonly decimal Gpt41NanoOutputPrice = 0.0004m;
-
-    // -----------------------------
-    // Audio Prices (per 1000 characters)
-    // -----------------------------
-
-    public static readonly decimal TTSPrice = 0.015m;
-    public static readonly decimal TTSHDPrice = 0.030m;
-    public static readonly decimal GPT4oMiniTTSPrice = 0.01m;
-    public static readonly decimal GPT4oTTSPrice = 0.04m;
-
-    // -----------------------------
-    // Image Prices (per image)
-    // -----------------------------
-
-    public static readonly decimal DallE3StandardPrice = 0.040m;
-    public static readonly decimal DallE3HDPrice = 0.080m;
-
+   
     // -----------------------------
     // Prompts
     // -----------------------------
