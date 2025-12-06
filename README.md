@@ -2,7 +2,7 @@
 
 ![header](/docs/header.png)
 
-This repository contains a console application written in .NET 9 to create a podcast using AI.
+This repository contains a console application written in .NET 10 to create a podcast using AI.
 
 ## Slides
 
